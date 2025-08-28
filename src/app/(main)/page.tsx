@@ -1,0 +1,71 @@
+import { provideSecurityInsights } from "@/ai/flows/provide-security-insights";
+import { CyberSafetyScore } from "@/components/cortex-mobile/cyber-safety-score";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { mockScanHistory } from "@/lib/mock-data";
+import { ArrowRight, Lightbulb, ShieldCheck, TrendingUp } from "lucide-react";
+import Link from "next/link";
+
+export const revalidate = 0;
+
+export default async function DashboardPage() {
+  const insights = await provideSecurityInsights({
+    scanHistory: JSON.stringify(mockScanHistory),
+  });
+
+  return (
+    <div className="flex flex-col min-h-full p-4 md:p-6 space-y-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tighter">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome to CortexMobile</p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-6">
+        <CyberSafetyScore score={insights.cyberSafetyScore} />
+
+        <Link href="/scan" className="w-full">
+            <Button size="lg" className="w-full h-16 text-lg font-bold">
+                <ShieldCheck className="mr-2 h-6 w-6" />
+                Start New Scan
+            </Button>
+        </Link>
+        
+        <Card>
+            <CardHeader className="flex flex-row items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                    <Lightbulb className="w-6 h-6 text-primary neon-icon" />
+                </div>
+                <div>
+                    <CardTitle>Personalized Guidance</CardTitle>
+                    <CardDescription>AI-powered tips to boost your security</CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">{insights.personalizedGuidance}</p>
+                <Link href="/insights">
+                    <Button variant="link" className="px-0 mt-2">
+                        View All Insights <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader className="flex flex-row items-center gap-4">
+                <div className="p-3 rounded-full bg-accent/10">
+                    <TrendingUp className="w-6 h-6 text-accent neon-accent" />
+                </div>
+                <div>
+                    <CardTitle>Predictive Trends</CardTitle>
+                    <CardDescription>Emerging threats to watch out for</CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">{insights.predictiveTrends}</p>
+            </CardContent>
+        </Card>
+
+      </div>
+    </div>
+  );
+}

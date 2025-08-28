@@ -1,0 +1,68 @@
+import type { Scan } from "@/lib/types";
+
+export const mockScanHistory: Scan[] = [
+  {
+    id: "1",
+    content: "http://example-bank-update.com",
+    type: "URL",
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 85,
+    isPhishing: true,
+  },
+  {
+    id: "2",
+    content: "Your account is locked. Click here.",
+    type: "SMS",
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 92,
+    isPhishing: true,
+  },
+  {
+    id: "3",
+    content: "https://legit-service.com/login",
+    type: "URL",
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 10,
+    isPhishing: false,
+  },
+  {
+    id: "4",
+    content: "invoice_2023.pdf",
+    type: "File",
+    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 78,
+    isPhishing: true,
+  },
+  {
+    id: "5",
+    content: "Claim your free prize now!",
+    type: "Email",
+    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 65,
+    isPhishing: true,
+  },
+  {
+    id: "6",
+    content: "https://google.com",
+    type: "URL",
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 2,
+    isPhishing: false,
+  },
+  {
+    id: "7",
+    content: "http://bit.ly/random-link",
+    type: "URL",
+    date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 55,
+    isPhishing: true,
+  },
+  {
+    id: "8",
+    content: "Your package is on its way.",
+    type: "SMS",
+    date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    riskScore: 5,
+    isPhishing: false,
+  },
+];
