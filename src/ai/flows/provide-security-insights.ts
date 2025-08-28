@@ -66,10 +66,18 @@ const provideSecurityInsightsFlow = ai.defineFlow(
       };
 
       const {output} = await provideSecurityInsightsPrompt(parsedInput);
-      return output!;
+      if (!output) {
+        throw new Error('No output from provideSecurityInsightsPrompt');
+      }
+      return output;
     } catch (error) {
-      console.error('Error in provideSecurityInsightsFlow:', error);
-      throw error;
+      console.error('Error in provideSecurityInsightsFlow:', error instanceof Error ? error.message : String(error));
+      // Providing a fallback response to avoid crashing the app
+      return {
+        personalizedGuidance: 'Could not retrieve personalized guidance at this time.',
+        predictiveTrends: 'Could not retrieve predictive trends at this time.',
+        cyberSafetyScore: 0,
+      };
     }
   }
 );
