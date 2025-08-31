@@ -13,6 +13,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {generate} from 'genkit';
 
 const ProvideSecurityInsightsInputSchema = z.object({
   scanHistory: z.string().describe('A JSON string of the user scan history.'),
@@ -58,11 +59,14 @@ const provideSecurityInsightsFlow = ai.defineFlow(
   },
   async input => {
     try {
-      // Parse the scanHistory and globalThreatMap if they are strings
       const parsedInput = {
         ...input,
         scanHistory: typeof input.scanHistory === 'string' ? input.scanHistory : JSON.stringify(input.scanHistory),
-        globalThreatMap: input.globalThreatMap ? (typeof input.globalThreatMap === 'string' ? input.globalThreatMap : JSON.stringify(input.globalThreatMap)) : undefined,
+        globalThreatMap: input.globalThreatMap
+          ? typeof input.globalThreatMap === 'string'
+            ? input.globalThreatMap
+            : JSON.stringify(input.globalThreatMap)
+          : undefined,
       };
 
       const {output} = await provideSecurityInsightsPrompt(parsedInput);
@@ -71,13 +75,29 @@ const provideSecurityInsightsFlow = ai.defineFlow(
       }
       return output;
     } catch (error) {
-      console.error('Error in provideSecurityInsightsFlow:', error instanceof Error ? error.message : String(error));
-      // Providing a fallback response to avoid crashing the app
-      return {
-        personalizedGuidance: 'Could not retrieve personalized guidance at this time.',
-        predictiveTrends: 'Could not retrieve predictive trends at this time.',
-        cyberSafetyScore: 0,
-      };
+      console.error('Error in provideSecurityInsightsFlow with primary model, trying fallback:', error instanceof Error ? error.message : String(error));
+      try {
+        // Fallback to gemini-pro if the flash model fails
+        const {output} = await generate({
+          model: 'googleai/gemini-pro',
+          prompt: provideSecurityInsightsPrompt.prompt,
+          input: input,
+          output: {
+            schema: ProvideSecurityInsightsOutputSchema,
+          },
+        });
+        if (!output) {
+          throw new Error('No output from fallback model.');
+        }
+        return output;
+      } catch (fallbackError) {
+        console.error('Error in provideSecurityInsightsFlow with fallback model:', fallbackError instanceof Error ? fallbackError.message : String(fallbackError));
+        return {
+          personalizedGuidance: 'Could not retrieve personalized guidance at this time.',
+          predictiveTrends: 'Could not retrieve predictive trends at this time.',
+          cyberSafetyScore: 0,
+        };
+      }
     }
   }
 );
