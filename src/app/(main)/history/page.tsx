@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockScanHistory } from "@/lib/mock-data";
+import { Card, CardContent } from "@/components/ui/card";
+import { useScanHistory } from "@/hooks/use-scan-history";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Scan } from "@/lib/types";
@@ -14,12 +14,13 @@ type FilterType = "all" | "safe" | "at_risk";
 
 export default function HistoryPage() {
   const [filter, setFilter] = useState<FilterType>("all");
+  const { scans } = useScanHistory();
 
-  const filteredScans = mockScanHistory.filter((scan) => {
+  const filteredScans = scans.filter((scan) => {
     if (filter === "safe") return !scan.isPhishing;
     if (filter === "at_risk") return scan.isPhishing;
     return true;
-  });
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const getScanIcon = (type: Scan["type"]) => {
     switch (type) {
@@ -68,7 +69,9 @@ export default function HistoryPage() {
         ))}
         {filteredScans.length === 0 && (
             <div className="text-center py-10">
-                <p className="text-muted-foreground">No scans match the current filter.</p>
+                <p className="text-muted-foreground">
+                    {scans.length === 0 ? "Your scan history is empty." : "No scans match the current filter."}
+                </p>
             </div>
         )}
       </div>

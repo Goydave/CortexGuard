@@ -7,6 +7,8 @@ import { analyzeThreat, AnalyzeThreatOutput } from "@/ai/flows/analyze-threat";
 import { ScanForm } from "@/components/cortex-mobile/scan-form";
 import { ScanResultCard } from "@/components/cortex-mobile/scan-result-card";
 import { Button } from "@/components/ui/button";
+import { useScanHistory } from "@/hooks/use-scan-history";
+import type { Scan } from "@/lib/types";
 
 const formSchema = z.object({
   content: z
@@ -15,10 +17,29 @@ const formSchema = z.object({
     .max(2000, "Content is too long. Please limit to 2000 characters."),
 });
 
+// A simple function to infer the type of scan from the content
+function getScanType(content: string): Scan['type'] {
+  const trimmedContent = content.trim();
+  if (trimmedContent.startsWith('http://') || trimmedContent.startsWith('https://')) {
+    return 'URL';
+  }
+  // This is a naive check for email content. A better check would use regex for email addresses.
+  if (trimmedContent.includes('@') && trimmedContent.includes('.')) {
+    return 'Email';
+  }
+  // A simple check for file names
+  if (trimmedContent.split(' ').length === 1 && trimmedContent.includes('.')) {
+      return 'File';
+  }
+  // Default to SMS for text-based content
+  return 'SMS';
+}
+
 export default function ScanPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<AnalyzeThreatOutput | null>(null);
   const { toast } = useToast();
+  const { addScan } = useScanHistory();
 
   const handleScan = async (values: z.infer<typeof formSchema>) => {
     setIsScanning(true);
@@ -26,6 +47,17 @@ export default function ScanPage() {
     try {
       const result = await analyzeThreat({ content: values.content });
       setScanResult(result);
+      
+      const newScan: Scan = {
+          id: crypto.randomUUID(),
+          content: values.content,
+          type: getScanType(values.content),
+          date: new Date().toISOString(),
+          riskScore: result.riskScore,
+          isPhishing: result.isPhishing,
+      };
+      addScan(newScan);
+
       if (result.isPhishing) {
         toast({
           variant: "destructive",
@@ -43,7 +75,7 @@ export default function ScanPage() {
       toast({
         variant: "destructive",
         title: "Scan Failed",
-        description: "An error occurred while scanning.",
+        description: "An error occurred while scanning. You may be offline.",
       });
     } finally {
       setIsScanning(false);
