@@ -27,14 +27,25 @@ export function useScanHistory() {
   }, []);
 
   const addScan = useCallback((newScan: Scan) => {
-    try {
-      const updatedScans = [newScan, ...scans];
-      setScans(updatedScans);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedScans));
-    } catch (error) {
-      console.error("Failed to save scan to localStorage:", error);
-    }
-  }, [scans]);
+    setScans(prevScans => {
+        const updatedScans = [newScan, ...prevScans];
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedScans));
+        } catch (error) {
+            console.error("Failed to save scan to localStorage:", error);
+        }
+        return updatedScans;
+    });
+  }, []);
 
-  return { scans, addScan };
+  const updateScans = (newScans: Scan[]) => {
+      setScans(newScans);
+       try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newScans));
+        } catch (error) {
+            console.error("Failed to save scans to localStorage:", error);
+        }
+  }
+
+  return { scans, addScan, setScans: updateScans };
 }
