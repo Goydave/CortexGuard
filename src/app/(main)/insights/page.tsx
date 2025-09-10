@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { provideSecurityInsights, ProvideSecurityInsightsOutput } from "@/ai/flows/provide-security-insights";
 import { ThreatTimelineChart } from "@/components/cortex-mobile/threat-timeline-chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScanHistory } from "@/hooks/use-scan-history";
@@ -9,35 +8,47 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Lightbulb, TrendingUp, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+type InsightsOutput = {
+  personalizedGuidance: string;
+  predictiveTrends: string;
+  cyberSafetyScore: number;
+}
 
 export default function InsightsPage() {
-  const [insights, setInsights] = useState<ProvideSecurityInsightsOutput | null>(null);
+  const [insights, setInsights] = useState<InsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { scans, isInitialized } = useScanHistory();
 
   useEffect(() => {
     async function fetchInsights() {
-      if (isInitialized) {
-        setIsLoading(true);
-        if (scans.length > 0) {
-          try {
-            const result = await provideSecurityInsights({
-              scanHistory: JSON.stringify(scans),
-            });
-            setInsights(result);
-          } catch (error) {
-            console.error("Failed to fetch insights:", error);
-            setInsights({
-              personalizedGuidance: "Could not load insights. Please try again later.",
-              predictiveTrends: "Could not load trends. Please try again later.",
-              cyberSafetyScore: 0,
-            });
-          }
-        } else {
-          setInsights(null); // No scans, so no insights
+      if (!isInitialized) return;
+
+      setIsLoading(true);
+      if (scans.length > 0) {
+        try {
+          const response = await fetch('/api/genkit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              flowId: 'provideSecurityInsightsFlow',
+              input: { scanHistory: JSON.stringify(scans) },
+            }),
+          });
+          if (!response.ok) throw new Error('Failed to fetch insights');
+          const result = await response.json();
+          setInsights(result);
+        } catch (error) {
+          console.error("Failed to fetch insights:", error);
+          setInsights({
+            personalizedGuidance: "Could not load insights. Please try again later.",
+            predictiveTrends: "Could not load trends. Please try again later.",
+            cyberSafetyScore: 0,
+          });
         }
-        setIsLoading(false);
+      } else {
+        setInsights(null); // No scans, so no insights
       }
+      setIsLoading(false);
     }
     fetchInsights();
   }, [isInitialized, scans]);
@@ -54,7 +65,7 @@ export default function InsightsPage() {
       <div className="space-y-6">
         <ThreatTimelineChart scans={scans} />
 
-        {isLoading && !isInitialized && (
+        {!isInitialized && (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertTitle>Initializing</AlertTitle>
@@ -64,7 +75,7 @@ export default function InsightsPage() {
           </Alert>
         )}
         
-        {!isLoading && scans.length === 0 && isInitialized && (
+        {isInitialized && scans.length === 0 && (
            <Alert variant="default" className="border-primary/20">
               <Info className="h-4 w-4" />
               <AlertTitle>Your Report is Waiting</AlertTitle>

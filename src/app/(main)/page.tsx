@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { provideSecurityInsights, ProvideSecurityInsightsOutput } from "@/ai/flows/provide-security-insights";
 import { CyberSafetyScore } from "@/components/cortex-mobile/cyber-safety-score";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,34 +10,48 @@ import { ArrowRight, Lightbulb, ShieldCheck, TrendingUp, Info } from "lucide-rea
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Simplified output type for dashboard display
+type DashboardInsights = {
+  personalizedGuidance: string;
+  predictiveTrends: string;
+  cyberSafetyScore: number;
+}
+
 export default function DashboardPage() {
-  const [insights, setInsights] = useState<ProvideSecurityInsightsOutput | null>(null);
+  const [insights, setInsights] = useState<DashboardInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { scans, isInitialized } = useScanHistory();
 
   useEffect(() => {
     async function fetchInsights() {
-      if (isInitialized) {
-        setIsLoading(true);
-        if (scans.length > 0) {
-          try {
-            const result = await provideSecurityInsights({
-              scanHistory: JSON.stringify(scans),
-            });
-            setInsights(result);
-          } catch (error) {
-            console.error("Failed to fetch insights:", error);
-            setInsights({
-              personalizedGuidance: "Could not load insights. Please try again later.",
-              predictiveTrends: "Could not load trends. Please try again later.",
-              cyberSafetyScore: 0,
-            });
-          }
-        } else {
-          setInsights(null); // No history, no insights
+      if (!isInitialized) return;
+
+      setIsLoading(true);
+      if (scans.length > 0) {
+        try {
+          const response = await fetch('/api/genkit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              flowId: 'provideSecurityInsightsFlow',
+              input: { scanHistory: JSON.stringify(scans) },
+            }),
+          });
+          if (!response.ok) throw new Error('Failed to fetch insights');
+          const result = await response.json();
+          setInsights(result);
+        } catch (error) {
+          console.error("Failed to fetch insights:", error);
+          setInsights({
+            personalizedGuidance: "Could not load insights. Please try again later.",
+            predictiveTrends: "Could not load trends. Please try again later.",
+            cyberSafetyScore: 0,
+          });
         }
-        setIsLoading(false);
+      } else {
+        setInsights(null); // No history, no insights
       }
+      setIsLoading(false);
     }
     fetchInsights();
   }, [isInitialized, scans]);
@@ -53,7 +66,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-6">
-        {isLoading ? (
+        {isLoading && !insights ? (
             <Skeleton className="h-[350px] w-full" />
         ) : (
             <CyberSafetyScore score={insights?.cyberSafetyScore ?? 0} />
@@ -84,7 +97,7 @@ export default function DashboardPage() {
                     </div>
                 ) : hasInsights ? (
                   <>
-                    <p className="text-sm text-muted-foreground">{insights.personalizedGuidance}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{insights.personalizedGuidance}</p>
                     <Link href="/insights">
                         <Button variant="link" className="px-0 mt-2">
                             View All Insights <ArrowRight className="ml-2 h-4 w-4" />
@@ -120,7 +133,7 @@ export default function DashboardPage() {
                         <Skeleton className="h-4 w-5/6" />
                     </div>
                 ) : hasInsights ? (
-                    <p className="text-sm text-muted-foreground">{insights.predictiveTrends}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{insights.predictiveTrends}</p>
                 ) : (
                      <Alert variant="default" className="border-accent/20">
                       <Info className="h-4 w-4" />

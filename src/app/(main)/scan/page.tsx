@@ -21,27 +21,29 @@ const formSchema = z.object({
 function getScanType(content: string): Scan['type'] {
   const trimmedContent = content.trim();
   try {
+    // Check if it's a valid URL format
     const url = new URL(trimmedContent);
     if (url.protocol === "http:" || url.protocol === "https:") {
       return 'URL';
     }
   } catch (_) {
-    // Not a valid URL, proceed to other checks
+    // Not a URL, check other types
   }
   
-  // Basic regex for email addresses
+  // Basic regex for email-like patterns
   if (/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(trimmedContent)) {
     return 'Email';
   }
   
-  // Simple check for file-like paths or names
+  // Simple check for file-like names
   if (/[\\/a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/.test(trimmedContent) && trimmedContent.split(' ').length < 5) {
       return 'File';
   }
   
-  // Default to SMS for text-based content
+  // Default to SMS for any other text
   return 'SMS';
 }
+
 
 export default function ScanPage() {
   const [isScanning, setIsScanning] = useState(false);
@@ -52,8 +54,25 @@ export default function ScanPage() {
   const handleScan = async (values: z.infer<typeof formSchema>) => {
     setIsScanning(true);
     setScanResult(null);
+
     try {
-      const result = await analyzeThreat({ content: values.content });
+      const response = await fetch('/api/genkit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          flowId: 'analyzeThreatFlow',
+          input: { content: values.content },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+
+      const result: AnalyzeThreatOutput = await response.json();
       setScanResult(result);
       
       const newScan: Scan = {
@@ -83,7 +102,7 @@ export default function ScanPage() {
       toast({
         variant: "destructive",
         title: "Scan Failed",
-        description: "An error occurred while scanning. You may be offline.",
+        description: "An error occurred while scanning. You may be offline or the server encountered an issue.",
       });
     } finally {
       setIsScanning(false);
