@@ -8,44 +8,49 @@ const STORAGE_KEY = 'scanHistory';
 
 export function useScanHistory() {
   const [scans, setScans] = useState<Scan[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    // This effect runs only on the client
+    let initialScans: Scan[] = [];
     try {
       const storedScans = localStorage.getItem(STORAGE_KEY);
       if (storedScans) {
-        setScans(JSON.parse(storedScans));
+        initialScans = JSON.parse(storedScans);
       } else {
         // If no scans are in local storage, initialize with mock data
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(mockScanHistory));
-        setScans(mockScanHistory);
+        initialScans = mockScanHistory;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialScans));
       }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
       // Fallback to mock data if localStorage is not available
-      setScans(mockScanHistory);
+      initialScans = mockScanHistory;
     }
+    setScans(initialScans);
+    setIsInitialized(true);
   }, []);
+
+  const updateScansInStorage = (updatedScans: Scan[]) => {
+    setScans(updatedScans);
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedScans));
+    } catch (error) {
+        console.error("Failed to save scans to localStorage:", error);
+    }
+  };
 
   const addScan = useCallback((newScan: Scan) => {
     setScans(prevScans => {
         const updatedScans = [newScan, ...prevScans];
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedScans));
-        } catch (error) {
-            console.error("Failed to save scan to localStorage:", error);
-        }
+        updateScansInStorage(updatedScans);
         return updatedScans;
     });
   }, []);
 
-  const updateScans = (newScans: Scan[]) => {
-      setScans(newScans);
-       try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newScans));
-        } catch (error) {
-            console.error("Failed to save scans to localStorage:", error);
-        }
-  }
+  const clearScans = () => {
+    updateScansInStorage([]);
+  };
 
-  return { scans, addScan, setScans: updateScans };
+  return { scans, addScan, setScans: updateScansInStorage, clearScans, isInitialized };
 }

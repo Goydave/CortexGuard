@@ -6,7 +6,6 @@ import { useScanHistory } from "@/hooks/use-scan-history";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Scan } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
 import { AlertTriangle, CheckCircle, File, Link, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,12 +30,23 @@ export default function HistoryPage() {
       default: return <Link className="w-5 h-5" />;
     }
   };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tighter">Scan History</h1>
-        <p className="text-muted-foreground">A log of all your past scans.</p>
+        <p className="text-muted-foreground">A log of all your past scans, available offline.</p>
       </header>
 
       <div className="flex gap-2">
@@ -52,13 +62,13 @@ export default function HistoryPage() {
               <div className={cn("p-2 rounded-full", scan.isPhishing ? "bg-destructive/20 text-destructive" : "bg-green-500/20 text-green-500")}>
                 {scan.isPhishing ? <AlertTriangle className="w-6 h-6" /> : <CheckCircle className="w-6 h-6" />}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{scan.content}</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                     {getScanIcon(scan.type)}
                     <span>{scan.type}</span>
-                    &bull;
-                    <span>{formatDistanceToNow(new Date(scan.date), { addSuffix: true })}</span>
+                    <span className="hidden sm:inline">&bull;</span>
+                    <span className="text-xs">{formatDate(scan.date)}</span>
                 </div>
               </div>
               <Badge variant={scan.isPhishing ? "destructive" : "secondary"} className="hidden sm:inline-flex">

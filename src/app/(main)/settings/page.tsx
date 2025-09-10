@@ -27,7 +27,7 @@ const settingsItems = [
 
 export default function SettingsPage() {
     const { setTheme, theme } = useTheme();
-    const { setScans } = useScanHistory();
+    const { clearScans } = useScanHistory();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -35,10 +35,7 @@ export default function SettingsPage() {
     }, []);
 
     const handleClearHistory = () => {
-        setScans([]);
-        if (typeof window !== "undefined") {
-            localStorage.removeItem('scanHistory');
-        }
+        clearScans();
     };
     
   return (
@@ -132,7 +129,7 @@ export default function SettingsPage() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete your scan history from this device. This action cannot be undone.
+                        This will permanently delete your scan history from this device's cache. This action cannot be undone.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
