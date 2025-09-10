@@ -15,7 +15,7 @@ import { analyzeScanResults } from '@/ai/flows/analyze-scan-results';
 genkit({
   plugins: [
     googleAI({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: process.env.CortexGuard, // Use the correct environment variable key
     }),
   ],
   model: 'googleai/gemini-2.5-flash',
