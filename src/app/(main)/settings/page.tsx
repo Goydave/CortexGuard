@@ -14,11 +14,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScanHistory } from "@/hooks/use-scan-history";
 import { useTheme } from "next-themes";
-import { Bell, ChevronRight, LogOut, Moon, Sun, Shield, Trash2 } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Moon, Sun, Shield, Trash2, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 const settingsItems = [
+    { label: "Profile", icon: UserCircle, href: "/settings/profile" },
     { label: "Notifications", icon: Bell, href: "/settings/notifications" },
     { label: "Security & 2FA", icon: Shield, href: "/settings/security" },
 ];
@@ -123,7 +124,7 @@ export default function SettingsPage() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete your scan history. This action cannot be undone.
+                        This will permanently delete your scan history from this device. This action cannot be undone.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
