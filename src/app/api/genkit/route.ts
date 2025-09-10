@@ -1,3 +1,4 @@
+
 // src/app/api/genkit/route.ts
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
@@ -12,7 +13,11 @@ import { analyzeScanResults } from '@/ai/flows/analyze-scan-results';
 // Initialize Genkit and the Google AI plugin directly in the API route.
 // This ensures it's configured correctly in the Vercel serverless environment.
 genkit({
-  plugins: [googleAI()],
+  plugins: [
+    googleAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    }),
+  ],
   model: 'googleai/gemini-2.5-flash',
 });
 
