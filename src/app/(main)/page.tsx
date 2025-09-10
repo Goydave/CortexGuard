@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScanHistory } from "@/hooks/use-scan-history";
-import { ArrowRight, Lightbulb, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowRight, Lightbulb, ShieldCheck, TrendingUp, Info } from "lucide-react";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function DashboardPage() {
   const [insights, setInsights] = useState<ProvideSecurityInsightsOutput | null>(null);
@@ -19,25 +20,30 @@ export default function DashboardPage() {
     async function fetchInsights() {
       if (isInitialized) {
         setIsLoading(true);
-        try {
-          const result = await provideSecurityInsights({
-            scanHistory: JSON.stringify(scans),
-          });
-          setInsights(result);
-        } catch (error) {
-          console.error("Failed to fetch insights:", error);
-          setInsights({
-            personalizedGuidance: "Could not load insights. Please try again later.",
-            predictiveTrends: "Could not load trends. Please try again later.",
-            cyberSafetyScore: 0,
-          });
-        } finally {
-          setIsLoading(false);
+        if (scans.length > 0) {
+          try {
+            const result = await provideSecurityInsights({
+              scanHistory: JSON.stringify(scans),
+            });
+            setInsights(result);
+          } catch (error) {
+            console.error("Failed to fetch insights:", error);
+            setInsights({
+              personalizedGuidance: "Could not load insights. Please try again later.",
+              predictiveTrends: "Could not load trends. Please try again later.",
+              cyberSafetyScore: 0,
+            });
+          }
+        } else {
+          setInsights(null); // No history, no insights
         }
+        setIsLoading(false);
       }
     }
     fetchInsights();
   }, [isInitialized, scans]);
+
+  const hasInsights = !isLoading && insights && scans.length > 0;
 
   return (
     <div className="flex flex-col min-h-full p-4 md:p-6 space-y-6">
@@ -76,14 +82,24 @@ export default function DashboardPage() {
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-3/4" />
                     </div>
+                ) : hasInsights ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">{insights.personalizedGuidance}</p>
+                    <Link href="/insights">
+                        <Button variant="link" className="px-0 mt-2">
+                            View All Insights <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </Link>
+                  </>
                 ) : (
-                    <p className="text-sm text-muted-foreground">{insights?.personalizedGuidance}</p>
+                   <Alert variant="default" className="border-primary/20">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>No Insights Yet</AlertTitle>
+                      <AlertDescription>
+                        Perform your first scan to get personalized security guidance from our AI.
+                      </AlertDescription>
+                    </Alert>
                 )}
-                <Link href="/insights">
-                    <Button variant="link" className="px-0 mt-2">
-                        View All Insights <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </Link>
             </CardContent>
         </Card>
 
@@ -103,8 +119,16 @@ export default function DashboardPage() {
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-5/6" />
                     </div>
+                ) : hasInsights ? (
+                    <p className="text-sm text-muted-foreground">{insights.predictiveTrends}</p>
                 ) : (
-                    <p className="text-sm text-muted-foreground">{insights?.predictiveTrends}</p>
+                     <Alert variant="default" className="border-accent/20">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>No Trends Available</AlertTitle>
+                      <AlertDescription>
+                        Scan history is needed to predict relevant emerging threats. Start scanning to learn more.
+                      </AlertDescription>
+                    </Alert>
                 )}
             </CardContent>
         </Card>

@@ -37,6 +37,7 @@ export default function HistoryPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+    }) + " " + date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -51,7 +52,7 @@ export default function HistoryPage() {
 
       <div className="flex gap-2">
         <Button variant={filter === 'all' ? 'default' : 'secondary'} onClick={() => setFilter('all')}>All</Button>
-        <Button variant={filter === 'at_risk' ? 'default' : 'secondary'} onClick={() => setFilter('at_risk')}>At Risk</Button>
+        <Button variant={filter === 'at_risk' ? 'destructive' : 'secondary'} onClick={() => setFilter('at_risk')}>At Risk</Button>
         <Button variant={filter === 'safe' ? 'default' : 'secondary'} onClick={() => setFilter('safe')}>Safe</Button>
       </div>
 
@@ -80,7 +81,7 @@ export default function HistoryPage() {
         {filteredScans.length === 0 && (
             <div className="text-center py-10">
                 <p className="text-muted-foreground">
-                    {scans.length === 0 ? "Your scan history is empty." : "No scans match the current filter."}
+                    {scans.length === 0 ? "Your scan history is empty. Perform a scan to get started." : "No scans match the current filter."}
                 </p>
             </div>
         )}

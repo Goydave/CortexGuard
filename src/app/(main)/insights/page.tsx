@@ -6,7 +6,8 @@ import { ThreatTimelineChart } from "@/components/cortex-mobile/threat-timeline-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScanHistory } from "@/hooks/use-scan-history";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Lightbulb, TrendingUp } from "lucide-react";
+import { Lightbulb, TrendingUp, Info } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 export default function InsightsPage() {
@@ -18,26 +19,30 @@ export default function InsightsPage() {
     async function fetchInsights() {
       if (isInitialized) {
         setIsLoading(true);
-        try {
-          const result = await provideSecurityInsights({
-            scanHistory: JSON.stringify(scans),
-          });
-          setInsights(result);
-        } catch (error) {
-          console.error("Failed to fetch insights:", error);
-          setInsights({
-            personalizedGuidance: "Could not load insights. Please try again later.",
-            predictiveTrends: "Could not load trends. Please try again later.",
-            cyberSafetyScore: 0,
-          });
-        } finally {
-          setIsLoading(false);
+        if (scans.length > 0) {
+          try {
+            const result = await provideSecurityInsights({
+              scanHistory: JSON.stringify(scans),
+            });
+            setInsights(result);
+          } catch (error) {
+            console.error("Failed to fetch insights:", error);
+            setInsights({
+              personalizedGuidance: "Could not load insights. Please try again later.",
+              predictiveTrends: "Could not load trends. Please try again later.",
+              cyberSafetyScore: 0,
+            });
+          }
+        } else {
+          setInsights(null); // No scans, so no insights
         }
+        setIsLoading(false);
       }
     }
     fetchInsights();
   }, [isInitialized, scans]);
 
+  const hasInsights = !isLoading && insights && scans.length > 0;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -47,7 +52,27 @@ export default function InsightsPage() {
       </header>
       
       <div className="space-y-6">
-        <ThreatTimelineChart />
+        <ThreatTimelineChart scans={scans} />
+
+        {isLoading && !isInitialized && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Initializing</AlertTitle>
+            <AlertDescription>
+              Loading your scan history...
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {!isLoading && scans.length === 0 && isInitialized && (
+           <Alert variant="default" className="border-primary/20">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Your Report is Waiting</AlertTitle>
+              <AlertDescription>
+                Perform a few scans to generate your first personalized AI security report. The more you scan, the smarter your insights become.
+              </AlertDescription>
+            </Alert>
+        )}
 
         <Card>
           <CardHeader>
@@ -64,8 +89,10 @@ export default function InsightsPage() {
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-3/4" />
               </div>
+            ) : hasInsights ? (
+              <p className="text-sm">{insights.personalizedGuidance}</p>
             ) : (
-              <p className="text-sm">{insights?.personalizedGuidance}</p>
+              <p className="text-sm text-muted-foreground">No guidance available. Perform scans to get personalized tips.</p>
             )}
           </CardContent>
         </Card>
@@ -85,8 +112,10 @@ export default function InsightsPage() {
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
               </div>
+            ) : hasInsights ? (
+              <p className="text-sm">{insights.predictiveTrends}</p>
             ) : (
-              <p className="text-sm">{insights?.predictiveTrends}</p>
+                <p className="text-sm text-muted-foreground">No trends to show. Scan history is needed to predict relevant threats.</p>
             )}
           </CardContent>
         </Card>

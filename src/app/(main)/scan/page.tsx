@@ -20,17 +20,25 @@ const formSchema = z.object({
 // A simple function to infer the type of scan from the content
 function getScanType(content: string): Scan['type'] {
   const trimmedContent = content.trim();
-  if (trimmedContent.startsWith('http://') || trimmedContent.startsWith('https://')) {
-    return 'URL';
+  try {
+    const url = new URL(trimmedContent);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return 'URL';
+    }
+  } catch (_) {
+    // Not a valid URL, proceed to other checks
   }
-  // This is a naive check for email content. A better check would use regex for email addresses.
-  if (trimmedContent.includes('@') && trimmedContent.includes('.')) {
+  
+  // Basic regex for email addresses
+  if (/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(trimmedContent)) {
     return 'Email';
   }
-  // A simple check for file names
-  if (trimmedContent.split(' ').length === 1 && trimmedContent.includes('.')) {
+  
+  // Simple check for file-like paths or names
+  if (/[\\/a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/.test(trimmedContent) && trimmedContent.split(' ').length < 5) {
       return 'File';
   }
+  
   // Default to SMS for text-based content
   return 'SMS';
 }
