@@ -1,46 +1,47 @@
 // src/app/api/genkit/route.ts
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { runFlow, getFlow } from '@genkit-ai/next/server';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+// Import flows so they can be called.
+import { analyzeThreat } from '@/ai/flows/analyze-threat';
+import { provideSecurityInsights } from '@/ai/flows/provide-security-insights';
+import { generateAiInsights } from '@/ai/flows/generate-ai-insights';
+import { analyzeScanResults } from '@/ai/flows/analyze-scan-results';
 
 // Initialize Genkit and the Google AI plugin directly in the API route.
 // This ensures it's configured correctly in the Vercel serverless environment.
-export const ai = genkit({
+genkit({
   plugins: [googleAI()],
   model: 'googleai/gemini-2.5-flash',
 });
-
-// Import flows so they are registered with the Genkit instance.
-import '@/ai/flows/analyze-threat';
-import '@/ai/flows/provide-security-insights';
-import '@/ai/flows/generate-ai-insights';
-import '@/ai/flows/analyze-scan-results';
 
 
 export async function POST(req: NextRequest) {
   const { flowId, input } = await req.json();
 
-  const flow = await getFlow(flowId);
-  if (!flow) {
-    return new Response(JSON.stringify({ error: 'Flow not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
-    const output = await runFlow(flow, input);
-    return new Response(JSON.stringify(output), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    let output;
+    switch (flowId) {
+      case 'analyzeThreatFlow':
+        output = await analyzeThreat(input);
+        break;
+      case 'provideSecurityInsightsFlow':
+        output = await provideSecurityInsights(input);
+        break;
+      case 'generateAiInsightsFlow':
+        output = await generateAiInsights(input);
+        break;
+      case 'analyzeScanResultsFlow':
+          output = await analyzeScanResults(input);
+          break;
+      default:
+        return NextResponse.json({ error: 'Flow not found' }, { status: 404 });
+    }
+    return NextResponse.json(output, { status: 200 });
   } catch (error) {
     console.error(`Error running flow ${flowId}:`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return new Response(JSON.stringify({ error: `Flow execution failed: ${errorMessage}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json({ error: `Flow execution failed: ${errorMessage}` }, { status: 500 });
   }
 }
