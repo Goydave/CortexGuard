@@ -1,4 +1,3 @@
-
 // src/app/api/genkit/route.ts
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
@@ -29,6 +28,10 @@ export async function POST(req: NextRequest) {
     let output;
     switch (flowId) {
       case 'analyzeThreatFlow':
+        // The input for analyzeThreat is now expected to be a string directly
+        if (typeof input !== 'string') {
+          throw new Error('Invalid input for analyzeThreatFlow. Expected a string.');
+        }
         output = await analyzeThreat(input);
         break;
       case 'provideSecurityInsightsFlow':

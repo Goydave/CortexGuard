@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeThreat, AnalyzeThreatOutput } from "@/ai/flows/analyze-threat";
+import type { AnalyzeThreatOutput } from "@/ai/flows/analyze-threat";
 import { ScanForm } from "@/components/cortex-mobile/scan-form";
 import { ScanResultCard } from "@/components/cortex-mobile/scan-result-card";
 import { Button } from "@/components/ui/button";
@@ -63,12 +63,13 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           flowId: 'analyzeThreatFlow',
-          input: { content: values.content },
+          input: values.content, // Pass content directly as the input
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response from server.' }));
+        console.error("Server error response:", errorData);
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
@@ -98,11 +99,12 @@ export default function ScanPage() {
         });
       }
     } catch (error) {
-      console.error("Scan failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      console.error("Scan failed:", errorMessage);
       toast({
         variant: "destructive",
         title: "Scan Failed",
-        description: "An error occurred while scanning. You may be offline or the server encountered an issue.",
+        description: `An error occurred while scanning. Details: ${errorMessage}`,
       });
     } finally {
       setIsScanning(false);

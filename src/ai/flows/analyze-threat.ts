@@ -12,10 +12,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const AnalyzeThreatInputSchema = z.object({
-  content: z.string().describe('The content to analyze for phishing threats (URL, SMS, email, attachment content).'),
-});
-export type AnalyzeThreatInput = z.infer<typeof AnalyzeThreatInputSchema>;
+// Input is now a simple string
+export type AnalyzeThreatInput = string;
 
 const AnalyzeThreatOutputSchema = z.object({
   isPhishing: z.boolean().describe('Whether the content is determined to be a phishing attempt.'),
@@ -24,19 +22,19 @@ const AnalyzeThreatOutputSchema = z.object({
 });
 export type AnalyzeThreatOutput = z.infer<typeof AnalyzeThreatOutputSchema>;
 
-export async function analyzeThreat(input: AnalyzeThreatInput): Promise<AnalyzeThreatOutput> {
-  return analyzeThreatFlow(input);
+export async function analyzeThreat(content: AnalyzeThreatInput): Promise<AnalyzeThreatOutput> {
+  return analyzeThreatFlow(content);
 }
 
 const analyzeThreatPrompt = ai.definePrompt({
   name: 'analyzeThreatPrompt',
-  input: {schema: AnalyzeThreatInputSchema},
+  input: {schema: z.string()}, // Schema matches the string input
   output: {schema: AnalyzeThreatOutputSchema},
   prompt: `You are an AI-powered cybersecurity expert. Your task is to analyze the given content and determine if it is a phishing attempt.
 
   Based on your analysis, provide a risk score between 0 and 100, where 0 indicates no risk and 100 indicates a high risk of being a phishing attempt. Explain your reasoning for the assigned risk score and identify any specific indicators of phishing.
 
-  Content to analyze: {{{content}}}
+  Content to analyze: {{{input}}}
 
   Ensure that the output is formatted as a JSON object matching the AnalyzeThreatOutputSchema. Set isPhishing to true if the riskScore is above 50.
 `,
@@ -45,11 +43,11 @@ const analyzeThreatPrompt = ai.definePrompt({
 const analyzeThreatFlow = ai.defineFlow(
   {
     name: 'analyzeThreatFlow',
-    inputSchema: AnalyzeThreatInputSchema,
+    inputSchema: z.string(),
     outputSchema: AnalyzeThreatOutputSchema,
   },
-  async input => {
-    const {output} = await analyzeThreatPrompt(input);
+  async content => {
+    const {output} = await analyzeThreatPrompt(content);
     return output!;
   }
 );
