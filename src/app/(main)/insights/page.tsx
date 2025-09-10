@@ -1,15 +1,43 @@
-import { provideSecurityInsights } from "@/ai/flows/provide-security-insights";
+"use client";
+
+import { useEffect, useState } from "react";
+import { provideSecurityInsights, ProvideSecurityInsightsOutput } from "@/ai/flows/provide-security-insights";
 import { ThreatTimelineChart } from "@/components/cortex-mobile/threat-timeline-chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockScanHistory } from "@/lib/mock-data";
+import { useScanHistory } from "@/hooks/use-scan-history";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Lightbulb, TrendingUp } from "lucide-react";
 
-export const revalidate = 0;
 
-export default async function InsightsPage() {
-  const insights = await provideSecurityInsights({
-    scanHistory: JSON.stringify(mockScanHistory),
-  });
+export default function InsightsPage() {
+  const [insights, setInsights] = useState<ProvideSecurityInsightsOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { scans, isInitialized } = useScanHistory();
+
+  useEffect(() => {
+    async function fetchInsights() {
+      if (isInitialized) {
+        setIsLoading(true);
+        try {
+          const result = await provideSecurityInsights({
+            scanHistory: JSON.stringify(scans),
+          });
+          setInsights(result);
+        } catch (error) {
+          console.error("Failed to fetch insights:", error);
+          setInsights({
+            personalizedGuidance: "Could not load insights. Please try again later.",
+            predictiveTrends: "Could not load trends. Please try again later.",
+            cyberSafetyScore: 0,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    fetchInsights();
+  }, [isInitialized, scans]);
+
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -30,7 +58,15 @@ export default async function InsightsPage() {
             <CardDescription>AI-powered tips to boost your security posture.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{insights.personalizedGuidance}</p>
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : (
+              <p className="text-sm">{insights?.personalizedGuidance}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -43,7 +79,15 @@ export default async function InsightsPage() {
             <CardDescription>Emerging phishing attacks and threats to be aware of.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{insights.predictiveTrends}</p>
+             {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : (
+              <p className="text-sm">{insights?.predictiveTrends}</p>
+            )}
           </CardContent>
         </Card>
       </div>

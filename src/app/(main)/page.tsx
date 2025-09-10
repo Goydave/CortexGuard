@@ -1,17 +1,43 @@
-import { provideSecurityInsights } from "@/ai/flows/provide-security-insights";
+"use client";
+
+import { useEffect, useState } from "react";
+import { provideSecurityInsights, ProvideSecurityInsightsOutput } from "@/ai/flows/provide-security-insights";
 import { CyberSafetyScore } from "@/components/cortex-mobile/cyber-safety-score";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockScanHistory } from "@/lib/mock-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScanHistory } from "@/hooks/use-scan-history";
 import { ArrowRight, Lightbulb, ShieldCheck, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-export const revalidate = 0;
+export default function DashboardPage() {
+  const [insights, setInsights] = useState<ProvideSecurityInsightsOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { scans, isInitialized } = useScanHistory();
 
-export default async function DashboardPage() {
-  const insights = await provideSecurityInsights({
-    scanHistory: JSON.stringify(mockScanHistory),
-  });
+  useEffect(() => {
+    async function fetchInsights() {
+      if (isInitialized) {
+        setIsLoading(true);
+        try {
+          const result = await provideSecurityInsights({
+            scanHistory: JSON.stringify(scans),
+          });
+          setInsights(result);
+        } catch (error) {
+          console.error("Failed to fetch insights:", error);
+          setInsights({
+            personalizedGuidance: "Could not load insights. Please try again later.",
+            predictiveTrends: "Could not load trends. Please try again later.",
+            cyberSafetyScore: 0,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    fetchInsights();
+  }, [isInitialized, scans]);
 
   return (
     <div className="flex flex-col min-h-full p-4 md:p-6 space-y-6">
@@ -21,7 +47,11 @@ export default async function DashboardPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-6">
-        <CyberSafetyScore score={insights.cyberSafetyScore} />
+        {isLoading ? (
+            <Skeleton className="h-[350px] w-full" />
+        ) : (
+            <CyberSafetyScore score={insights?.cyberSafetyScore ?? 0} />
+        )}
 
         <Link href="/scan" className="w-full">
             <Button size="lg" className="w-full h-16 text-lg font-bold">
@@ -41,7 +71,14 @@ export default async function DashboardPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">{insights.personalizedGuidance}</p>
+                {isLoading ? (
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">{insights?.personalizedGuidance}</p>
+                )}
                 <Link href="/insights">
                     <Button variant="link" className="px-0 mt-2">
                         View All Insights <ArrowRight className="ml-2 h-4 w-4" />
@@ -61,7 +98,14 @@ export default async function DashboardPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">{insights.predictiveTrends}</p>
+                 {isLoading ? (
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">{insights?.predictiveTrends}</p>
+                )}
             </CardContent>
         </Card>
 

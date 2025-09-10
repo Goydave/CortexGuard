@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Scan } from '@/lib/types';
-import { mockScanHistory } from '@/lib/mock-data';
 
 const STORAGE_KEY = 'scanHistory';
 
@@ -18,14 +17,14 @@ export function useScanHistory() {
       if (storedScans) {
         initialScans = JSON.parse(storedScans);
       } else {
-        // If no scans are in local storage, initialize with mock data
-        initialScans = mockScanHistory;
+        // If no scans are in local storage, initialize with an empty array
+        initialScans = [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(initialScans));
       }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
-      // Fallback to mock data if localStorage is not available
-      initialScans = mockScanHistory;
+      // Fallback to empty array if localStorage is not available
+      initialScans = [];
     }
     setScans(initialScans);
     setIsInitialized(true);
