@@ -17,6 +17,7 @@ import { useTheme } from "next-themes";
 import { Bell, ChevronRight, LogOut, Moon, Sun, Shield, Trash2, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 const settingsItems = [
     { label: "Profile", icon: UserCircle, href: "/settings/profile" },
@@ -27,6 +28,11 @@ const settingsItems = [
 export default function SettingsPage() {
     const { setTheme, theme } = useTheme();
     const { setScans } = useScanHistory();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleClearHistory = () => {
         setScans([]);
@@ -49,14 +55,16 @@ export default function SettingsPage() {
         <CardContent>
              <div className="flex items-center justify-between">
                 <label htmlFor="theme-toggle" className="flex items-center gap-4 font-medium">
-                    {theme === 'dark' ? <Moon className="w-6 h-6 text-muted-foreground" /> : <Sun className="w-6 h-6 text-muted-foreground" />}
+                    {mounted && (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) ? <Moon className="w-6 h-6 text-muted-foreground" /> : <Sun className="w-6 h-6 text-muted-foreground" />}
                     <span>Theme</span>
                 </label>
-                <div className="flex gap-2">
-                    <Button variant={theme === 'light' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('light')}>Light</Button>
-                    <Button variant={theme === 'dark' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('dark')}>Dark</Button>
-                    <Button variant={theme === 'system' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('system')}>System</Button>
-                </div>
+                {mounted && (
+                  <div className="flex gap-2">
+                      <Button variant={theme === 'light' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('light')}>Light</Button>
+                      <Button variant={theme === 'dark' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('dark')}>Dark</Button>
+                      <Button variant={theme === 'system' ? 'default' : 'secondary'} size="sm" onClick={() => setTheme('system')}>System</Button>
+                  </div>
+                )}
             </div>
         </CardContent>
       </Card>
